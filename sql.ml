@@ -66,12 +66,45 @@ and operator_parser (l : lexeme list) : lexeme list = (*Adrien*)
 (* II.Formule logique : Condition *)
 (**********************************)
 
-let logical_operator_parser (l : lexeme list) : lexeme list = (*Adrien*)
- 
-let condition_parser (l : lexeme list) : lexeme list = (*Adrien*)
-  let l = expression_parser l in
+let logical_operator_parser (l : lexeme list) : lexeme list = [](*Adrien*)
+
+let comparateur = function
+  Egal
+| NonEgal
+| PlusGrand
+| PlusPetit
+| PlusGrandEgal
+| PlusPetitEgal -> true
+| _ -> false
 
 
+let rec condition_parser (l : lexeme list) : lexeme list = (*Adrien, Niveau 3*)
+  match l with
+  | Not::l -> condition_parser l
+  | ParG::l -> begin
+    match condition_parser l with
+    | ParD::l -> l
+    | _ -> failwith "Condition mal parenthèsée"
+    end
+  | _ -> begin let l = expression_parser l in
+    match l with
+    | [] -> failwith "Comparaison sans second terme"
+    | IsNull::l
+    | IsNotNull::l -> l
+    | h::l -> (*"LeftExpression"*)
+      if comparateur h
+        then left_expression_parser l
+        else failwith "Comparaison invalide"
+    end
+and left_expression_parser l =
+    match l with
+    | ParG::l -> begin
+      let l = requete_parser l in
+      match l with
+      | ParD::l -> l
+      | _ -> failwith "Expression gauche mal parenthèsée"
+      end
+    | _ -> expression_parser l
 
 
 
