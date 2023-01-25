@@ -107,35 +107,86 @@ and left_expression_parser l =
     | _ -> expression_parser l
 
 
-
-
-
 (**********************************)
 (* III. Clauses optionnelles      *)
 (**********************************)
 (*     Made by Lancelot del fuego *)
 
 (* Q8 *)
-let where_clause_parser (l : lexeme list) : lexeme list = (* Made by Lancelot del fuego *)
+and where_clause_parser (l : lexeme list) : lexeme list = (* Made by Lancelot del fuego *)
   match l with
     | Where::cond -> condition_parser cond
-    | _ -> failwith "Erreur : pas de WHERE";;
+    | _ -> l
 
 (* Q9 *)
-let having_clause_parser (l : lexeme list) : lexeme list = (* Made by Lancelot del fuego *)
+and having_clause_parser (l : lexeme list) : lexeme list = (* Made by Lancelot del fuego *)
   match l with
       | Having::cond -> condition_parser cond
-      | _ -> failwith "Erreur : pas de HAVING";;
+      | _ -> l
 
+(* Q10 *)
+and liste_colonne_parser (l: lexeme list) : lexeme list = (* Gregoire *)
+  let l' = colonne_parser l in
+  liste_colonne_second_parser l'
 
-let rec requete_parser (l : lexeme list) : lexeme list = l (** TODO. Q26 **)
+and liste_colonne_second_parser (l: lexeme list) : lexeme list = (* Gregoire *)
+  match l with
+  | Virgule::t -> liste_colonne_parser t
+  | _ -> l
+
+(* Q11 *)
+and group_by_clause_parser (l : lexeme list) : lexeme list = (* Made by Lancelot del fuego *)
+  match l with
+    | GroupBy::reste -> having_clause_parser (liste_colonne_parser reste)
+    | _ -> l
+
+(* Q12 *)
+and order_parser (l : lexeme list) : lexeme list = (* Made by Lancelot del fuego *)
+  match l with
+    | Asc::reste -> reste
+    | Desc::reste -> reste
+    | _ -> l
+    
+(* Q13 *)
+and liste_order_colonne_parser (l : lexeme list) : lexeme list = (* Made by Lancelot del fuego *)
+  let under_exp (c' : lexeme list) : lexeme list =
+    match c' with
+      | Virgule::loc -> liste_order_colonne_parser loc
+      | _ -> c'
+  in
+  colonne_parser (order_parser l)
+  |> under_exp
+
+and orderby_parser (l : lexeme list) : lexeme list = (* Made by Lancelot del fuego *)
+  match l with
+  | OrderBy::reste -> liste_order_colonne_parser reste
+  | _ -> l
+  
+(* Q14 *)
+and offset_clause_parser (l : lexeme list) : lexeme list = (* Made by Lancelot del fuego *)
+  match l with
+  | Offset::Valeur (n)::reste -> reste
+  | _ -> l
+  
+(* Q15 *)
+and limit_clause_parser (l : lexeme list) : lexeme list = (* Made by Lancelot del fuego *)
+  match l with
+    | Limit::Valeur (n)::offset_clause -> offset_clause_parser offset_clause
+    | _ -> l
+  
+  
+(********************************)
+(*  NOW ENTER INTEGRATION HELL  *)
+(********************************)
+
+and requete_parser (l : lexeme list) : lexeme list = l (** TODO. Q26 **)
 let parser (l : lexeme list)  = (* Soso *)
 match requete_parser l with 
 | [] -> ()
 | _ -> failwith "Lexème inattendu." 
 
 
-(*let test (i : int) (l : lexeme list) (correct : bool) =
+(* let test (i : int) (l : lexeme list) (correct : bool) =
   let result = 
     try
       Printf.printf "Test no %d: " i;
@@ -151,8 +202,8 @@ let _ =
   test 1 [Select ; Nom("A") ; From ; Nom("T")] true;
   test 2 [Select ; Nom("A") ; From] false;
   test 3 [Select ; Nom("A") ; Point ; Nom("A") ; From ; Nom("T")] true ;
-  test 4 [Select ; Nom("A") ; Point ; Nom("A") ; From ; Nom("T") ; Where ; Nom("A") ; Egal ; Valeur(5)] true
-*)
+  test 4 [Select ; Nom("A") ; Point ; Nom("A") ; From ; Nom("T") ; Where ; Nom("A") ; Egal ; Valeur(5)] true *)
+  
 let test_parser (i : int) (parser_to_test) (l : lexeme list) (correct : bool) =
   let result = 
     try
